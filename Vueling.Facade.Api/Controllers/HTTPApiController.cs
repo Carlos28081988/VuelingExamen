@@ -16,57 +16,36 @@ using Vueling.Facade.Api.ViewModels;
 
 namespace Vueling.Facade.Api.Controllers
 {
-    #region Constructors
     public class HTTPApiController {
-        public static HttpClient client;
-        public static ClientService clientService;
-        public static PolicyService policyService;
 
-        
+        public static HTTPService httpService;
+
+        #region Constructors
         static HTTPApiController() {
-            client = new HttpClient();
-            clientService = new ClientService();
-            policyService = new PolicyService();
-            client.BaseAddress = new Uri(ConfigurationManager.AppSettings["uriWebServiceClientsPolicies"].ToString());
+           httpService = new HTTPService();
         }
 
-        public HTTPApiController() {
-            client = new HttpClient();
-            clientService = new ClientService();
-            policyService = new PolicyService();
-            client.BaseAddress = new Uri(ConfigurationManager.AppSettings["uriWebServiceClientsPolicies"].ToString());
+        public HTTPApiController() : this(new HTTPService()) {
+        }
+
+        public HTTPApiController(HTTPService hTTPService) {
+            httpService = hTTPService;
         }
         #endregion
 
         public static async Task InitBDAsync() {
-            var clients = await GetAllClients();
-            var policies = await GetAllPolicies();
+            await GetAllClients();
+            await GetAllPolicies();
         }
         
+        
         public static async Task<List<ClientDto>> GetAllClients() {
-            ContainerJsonClientDto ContainerJsonClients = new ContainerJsonClientDto();
-            List<ClientDto> listClientDtos = new List<ClientDto>();
+            
             try {
-                HttpResponseMessage response = client.GetAsync(ConfigurationManager.AppSettings["pathToAllClients"].ToString()).Result;
+                var listClientDtos = await httpService.GetAllClients();
+                return listClientDtos;
 
-                if (response.IsSuccessStatusCode) {
-                    var jsonString = await response.Content.ReadAsStringAsync();
-                    ContainerJsonClients = JsonConvert.DeserializeObject<ContainerJsonClientDto>(jsonString);
-                    
-                    for(int i = 0; i<ContainerJsonClients.clientDto.Length; i++) {
-                        listClientDtos.Add(ContainerJsonClients.clientDto[i]);
-                    }
-
-                    clientService.AddList(listClientDtos);
-                }
-                #region Exceptions and log
-            } catch (ArgumentNullException e) {
-                Log.Error(ResourceApi.ArgumentNullError
-                    + e.Message + ResourceApi.ErrorLogSeparation
-                    + e.Data + ResourceApi.ErrorLogSeparation
-                    + e.StackTrace);
-                throw new VuelingException(ResourceApi.ArgumentNullError, e);
-
+            #region Exceptions and log
             } catch (HttpRequestException e) {
                 Log.Error(ResourceApi.ArgumentNullError
                     + e.Message + ResourceApi.ErrorLogSeparation
@@ -80,37 +59,16 @@ namespace Vueling.Facade.Api.Controllers
 
                 throw new HttpResponseException(response);
             }
-                #endregion
-    
-            return listClientDtos;
+            #endregion
         }
 
         public static async Task<List<PolicyDto>> GetAllPolicies() {
-            ContainerJsonPolicyDto ContainerJsonPolicies = new ContainerJsonPolicyDto();
-            List<PolicyDto> listPolicyDtos = new List<PolicyDto>();
 
             try {
-                HttpResponseMessage response = client.GetAsync(ConfigurationManager.AppSettings["pathToAllPolicies"].ToString()).Result;
+                var listPolicytDtos = await httpService.GetAllPolicies();
+                return listPolicytDtos;
 
-                if (response.IsSuccessStatusCode) {
-                    var jsonString = await response.Content.ReadAsStringAsync();
-                    ContainerJsonPolicies = JsonConvert.DeserializeObject<ContainerJsonPolicyDto>(jsonString);
-
-                    for (int i = 0; i < ContainerJsonPolicies.policyDto.Length; i++) {
-                        listPolicyDtos.Add(ContainerJsonPolicies.policyDto[i]);
-                    }
-
-                    policyService.AddList(listPolicyDtos);
-
-                }
-                #region Exceptions and log
-            } catch (ArgumentNullException e) {
-                Log.Error(ResourceApi.ArgumentNullError
-                    + e.Message + ResourceApi.ErrorLogSeparation
-                    + e.Data + ResourceApi.ErrorLogSeparation
-                    + e.StackTrace);
-                throw new VuelingException(ResourceApi.ArgumentNullError, e);
-
+            #region Exceptions and log
             } catch (HttpRequestException e) {
                 Log.Error(ResourceApi.ArgumentNullError
                     + e.Message + ResourceApi.ErrorLogSeparation
@@ -124,9 +82,8 @@ namespace Vueling.Facade.Api.Controllers
 
                 throw new HttpResponseException(response);
             }
-                #endregion
-            return listPolicyDtos;
+            #endregion
         }
-        
+
     }
 }

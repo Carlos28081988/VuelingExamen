@@ -75,14 +75,14 @@ namespace Vueling.Application.Services.Service {
             }
         }
 
-        public List<PolicyDto> AddList(List<PolicyDto> listClientDto) {
+        public List<PolicyDto> AddList(List<PolicyDto> listPolicyDto) {
             List<PolicyEntity> ListPolicyEntities;
 
             try {
                 var config = new MapperConfiguration(cfg => cfg.CreateMap<PolicyEntity, PolicyDto>().ReverseMap());
                 IMapper iMapper = config.CreateMapper();
 
-                ListPolicyEntities = iMapper.Map<List<PolicyDto>, List<PolicyEntity>>(listClientDto);
+                ListPolicyEntities = iMapper.Map<List<PolicyDto>, List<PolicyEntity>>(listPolicyDto);
 
                 List<PolicyEntity> ListPolicyEntitiesAdded = policyRepository.AddList(ListPolicyEntities);
 

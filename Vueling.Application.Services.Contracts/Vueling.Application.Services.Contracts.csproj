@@ -41,9 +41,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IClientService.cs" />
+    <Compile Include="IHTTPService.cs" />
     <Compile Include="IPolicyService.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Vueling.Application.Dto\Vueling.Application.Dto.csproj">
+      <Project>{429BE245-849D-438C-AD59-DB6CE0D92830}</Project>
+      <Name>Vueling.Application.Dto</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
