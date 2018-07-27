@@ -19,6 +19,9 @@ namespace Vueling.Facade.Api.Controllers
     {
         private readonly PolicyService policyService;
 
+        /// <summary>
+        /// Void Constructor
+        /// </summary>
         public PolicyApiController() : this(new PolicyService()) {
             #region Init Log
             Log.Logger = new LoggerConfiguration()
@@ -28,6 +31,9 @@ namespace Vueling.Facade.Api.Controllers
             #endregion
         }
 
+        /// <summary>
+        /// Void Constructor
+        /// </summary>
         public PolicyApiController(PolicyService policyService) {
             this.policyService = policyService;
             #region Init Log
@@ -38,13 +44,22 @@ namespace Vueling.Facade.Api.Controllers
             #endregion
         }
 
-
+        /// <summary>
+        /// Get all policies
+        /// </summary>
+        /// <returns></returns>
         // GET: api/PolicyApi
         public List<PolicyDto> Get() {
             return policyService.Get();
         }
 
-        // GET: api/PolicyApi/5
+        /// <summary>
+        /// Get a Policy by his id
+        /// </summary>
+        /// <param name="idPolicy"></param>
+        /// <returns></returns>
+        [Route("PolicyApi/{id}")]
+        [HttpGet]
         public PolicyDto Get(string idPolicy) {
             return policyService.GetById(idPolicy);
         }

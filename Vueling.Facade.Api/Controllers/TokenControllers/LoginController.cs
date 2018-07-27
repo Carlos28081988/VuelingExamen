@@ -30,12 +30,12 @@ namespace Vueling.Facade.Api.Controllers.TokenControllers{
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
 
             ClientService clientService = new ClientService();
-            ClientDto client = clientService.GetByName(login.Username);
+            ClientDto client = clientService.GetById(login.Id);
 
-            bool isCredentialValid = login.Id.Equals(client.Id) && login.Username.Equals(client.Name);
+            bool isCredentialValid = login.Id.Equals(client.Id);
 
             if (isCredentialValid) {
-                var token = TokenGenerator.GenerateTokenJwt(login.Username);
+                var token = TokenGenerator.GenerateTokenJwt(client.Name, client.Email, client.Role);
                 return Ok(token);
             }
             else

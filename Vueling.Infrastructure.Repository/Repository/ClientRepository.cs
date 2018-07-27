@@ -16,7 +16,6 @@ using Vueling.Infrastructure.Repository.DataModel;
 namespace Vueling.Infrastructure.Repository.Repository {
     public class ClientRepository : IRepository<ClientEntity>, IClientRepository<ClientEntity> {
 
-
         public ClientRepository() {
             #region Init Log
             Log.Logger = new LoggerConfiguration()
@@ -24,104 +23,96 @@ namespace Vueling.Infrastructure.Repository.Repository {
                 .WriteTo.File(ConfigurationManager.AppSettings["ErrorLog"].ToString(), fileSizeLimitBytes: 1000)
                 .CreateLogger();
             #endregion
-        }
-        
+        }        
 
         public List<ClientEntity> AddList(List<ClientEntity> listClientEntities) {
             List<Client> listClients = null;
 
             var config = new MapperConfiguration(cfg => cfg.CreateMap<ClientEntity, Client>().ReverseMap());
-
             IMapper iMapper = config.CreateMapper();
 
             listClients = iMapper.Map<List<ClientEntity>, List<Client>>(listClientEntities);
-
             using (var db = new VuelingEntities()) {
 
-                using (var dbTransaction = db.Database.BeginTransaction()) {
+                if (HasTheDbBeenModified(listClients, db)) {
 
-                    try {
-                        if (HasTheDbBeenModified(listClients)) {
+                    DeleteAllTablesInOrder(db);
 
-                            DeleteAllRowsOfPolicyTable();
-                            DeleteAllRowsOfClientTable();
-
-                            foreach (var client in listClients) {
-                                db.Client.Add(client);
-                            }
+                    using (var dbTransaction = db.Database.BeginTransaction()) {
+                        try {
+                            db.Client.AddRange(listClients);
 
                             db.SaveChanges();
                             dbTransaction.Commit();
                         }
-                    }
-                    #region Exceptions With Log
+                        #region Exceptions With Log
                     catch (DbUpdateConcurrencyException e) {
-                        Log.Error(Resource_Infrastructure_Repository.ConcurrencyError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
+                            Log.Error(Resource_Infrastructure_Repository.ConcurrencyError
+                                + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.StackTrace);
 
-                        dbTransaction.Rollback();
+                            dbTransaction.Rollback();
 
-                        throw new VuelingException(Resource_Infrastructure_Repository.ConcurrencyError, e);
+                            throw new VuelingException(Resource_Infrastructure_Repository.ConcurrencyError, e);
 
-                    } catch (DbUpdateException e) {
-                        Log.Error(Resource_Infrastructure_Repository.DbUpdateError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
+                        } catch (DbUpdateException e) {
+                            Log.Error(Resource_Infrastructure_Repository.DbUpdateError
+                                + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.StackTrace);
 
-                        dbTransaction.Rollback();
+                            dbTransaction.Rollback();
 
-                        throw new VuelingException(Resource_Infrastructure_Repository.DbUpdateError, e);
+                            throw new VuelingException(Resource_Infrastructure_Repository.DbUpdateError, e);
 
-                    } catch (DbEntityValidationException e) {
-                        Log.Error(Resource_Infrastructure_Repository.DbEntityValidationError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
+                        } catch (DbEntityValidationException e) {
+                            Log.Error(Resource_Infrastructure_Repository.DbEntityValidationError
+                                + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.StackTrace);
 
-                        dbTransaction.Rollback();
+                            dbTransaction.Rollback();
 
-                        throw new VuelingException(Resource_Infrastructure_Repository.DbEntityValidationError, e);
+                            throw new VuelingException(Resource_Infrastructure_Repository.DbEntityValidationError, e);
 
-                    } catch (NotSupportedException e) {
-                        Log.Error(Resource_Infrastructure_Repository.NotSuportedError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
+                        } catch (NotSupportedException e) {
+                            Log.Error(Resource_Infrastructure_Repository.NotSuportedError
+                                + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.StackTrace);
 
-                        dbTransaction.Rollback();
+                            dbTransaction.Rollback();
 
-                        throw new VuelingException(Resource_Infrastructure_Repository.NotSuportedError, e);
+                            throw new VuelingException(Resource_Infrastructure_Repository.NotSuportedError, e);
 
-                    } catch (ObjectDisposedException e) {
-                        Log.Error(Resource_Infrastructure_Repository.ObjectDisposedError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
+                        } catch (ObjectDisposedException e) {
+                            Log.Error(Resource_Infrastructure_Repository.ObjectDisposedError
+                                + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.StackTrace);
 
-                        dbTransaction.Rollback();
+                            dbTransaction.Rollback();
 
-                        throw new VuelingException(Resource_Infrastructure_Repository.ObjectDisposedError, e);
+                            throw new VuelingException(Resource_Infrastructure_Repository.ObjectDisposedError, e);
 
-                    } catch (InvalidOperationException e) {
-                        Log.Error(Resource_Infrastructure_Repository.InvalidOperationError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
+                        } catch (InvalidOperationException e) {
+                            Log.Error(Resource_Infrastructure_Repository.InvalidOperationError
+                                + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                                + e.StackTrace);
 
-                        dbTransaction.Rollback();
+                            dbTransaction.Rollback();
 
-                        throw new VuelingException(Resource_Infrastructure_Repository.InvalidOperationError, e);
-                        #endregion
+                            throw new VuelingException(Resource_Infrastructure_Repository.InvalidOperationError, e);
+                            #endregion
+                        }
                     }
                 }
-
-                List<ClientEntity> listClientEntitiesAdded = iMapper.Map<List<Client>, List<ClientEntity>>(listClients);
-                
-                return listClientEntitiesAdded;
             }
+            List<ClientEntity> listClientEntitiesAdded = iMapper.Map<List<Client>, List<ClientEntity>>(listClients);
+            
+            return listClientEntitiesAdded;
         }
 
        
@@ -549,127 +540,107 @@ namespace Vueling.Infrastructure.Repository.Repository {
             }
         }
 
-        public bool HasTheDbBeenModified(List<Client> newListClients) {
+        public bool HasTheDbBeenModified(List<Client> newListClients, VuelingEntities db) {
+            List<Client> currentListClients = db.Client.OrderBy(x => x.Name).ToList();
 
-            using (var db = new VuelingEntities()) {
+            if (newListClients.Count() == currentListClients.Count()) {
 
-                using (var dbTransaction = db.Database.BeginTransaction()) {
+                newListClients = newListClients.OrderBy(x => x.Name).ToList();
 
-                    try {
-                        List<Client> currentListClients = db.Client.OrderBy(x => x.Name).ToList();
+                for (int i = 0; i < currentListClients.Count(); i++) {
 
-                        if (newListClients.Count() == currentListClients.Count()) {
-
-                            newListClients = newListClients.OrderBy(x => x.Name).ToList();
-
-                            for (int i = 0; i < currentListClients.Count(); i++) {
-
-                                if (!currentListClients[i].Id.Equals(newListClients[i].Id)) {
-                                    return true;
-                                }
-                            }
-                        } else return true;
-
-                        return false;
-                    }
-                    #region Exceptions With Log
-                        catch (DbUpdateConcurrencyException e) {
-                        Log.Error(Resource_Infrastructure_Repository.ConcurrencyError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
-
-                        dbTransaction.Rollback();
-
-                        throw new VuelingException(Resource_Infrastructure_Repository.ConcurrencyError, e);
-
-                    } catch (DbUpdateException e) {
-                        Log.Error(Resource_Infrastructure_Repository.DbUpdateError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
-
-                        dbTransaction.Rollback();
-
-                        throw new VuelingException(Resource_Infrastructure_Repository.DbUpdateError, e);
-
-                    } catch (DbEntityValidationException e) {
-                        Log.Error(Resource_Infrastructure_Repository.DbEntityValidationError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
-
-                        dbTransaction.Rollback();
-
-                        throw new VuelingException(Resource_Infrastructure_Repository.DbEntityValidationError, e);
-
-                    } catch (NotSupportedException e) {
-                        Log.Error(Resource_Infrastructure_Repository.NotSuportedError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
-
-                        dbTransaction.Rollback();
-
-                        throw new VuelingException(Resource_Infrastructure_Repository.NotSuportedError, e);
-
-                    } catch (ObjectDisposedException e) {
-                        Log.Error(Resource_Infrastructure_Repository.ObjectDisposedError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
-
-                        dbTransaction.Rollback();
-
-                        throw new VuelingException(Resource_Infrastructure_Repository.ObjectDisposedError, e);
-
-                    } catch (InvalidOperationException e) {
-                        Log.Error(Resource_Infrastructure_Repository.InvalidOperationError
-                            + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
-                            + e.StackTrace);
-
-                        dbTransaction.Rollback();
-
-                        throw new VuelingException(Resource_Infrastructure_Repository.InvalidOperationError, e);
-                        #endregion
+                    if (!currentListClients[i].Id.Equals(newListClients[i].Id)) {
+                        return true;
                     }
                 }
-            }
+            } else return true;
+
+            return false;
         }
 
-        public void DeleteAllRowsOfClientTable() {
-            using (var db = new VuelingEntities()) {
-                using (var dbTransaction = db.Database.BeginTransaction()) {
-                    try {
-                        db.Database.ExecuteSqlCommand(Resource_Infrastructure_Repository.QueryToDeleteAllRowsInClientTable);
 
-                        db.SaveChanges();
-                        dbTransaction.Commit();
-                    } catch (Exception e) {
-                        dbTransaction.Rollback();
+        public void DeleteAllTablesInOrder(VuelingEntities db) {
+            using (var dbTransaction = db.Database.BeginTransaction()) {
+                try {
+                    DeleteAllRowsOfPolicyTable(db);
+                    DeleteAllRowsOfClientTable(db);
 
-                        throw new VuelingException(Resource_Infrastructure_Repository.CantDeleteMsg, e);
-                    }
+                    db.SaveChanges();
+                    dbTransaction.Commit();
+                }
+                #region Exceptions With Log
+                catch (DbUpdateConcurrencyException e) {
+                    Log.Error(Resource_Infrastructure_Repository.ConcurrencyError
+                        + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.StackTrace);
+
+                    dbTransaction.Rollback();
+
+                    throw new VuelingException(Resource_Infrastructure_Repository.ConcurrencyError, e);
+
+                } catch (DbUpdateException e) {
+                    Log.Error(Resource_Infrastructure_Repository.DbUpdateError
+                        + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.StackTrace);
+
+                    dbTransaction.Rollback();
+
+                    throw new VuelingException(Resource_Infrastructure_Repository.DbUpdateError, e);
+
+                } catch (DbEntityValidationException e) {
+                    Log.Error(Resource_Infrastructure_Repository.DbEntityValidationError
+                        + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.StackTrace);
+
+                    dbTransaction.Rollback();
+
+                    throw new VuelingException(Resource_Infrastructure_Repository.DbEntityValidationError, e);
+
+                } catch (NotSupportedException e) {
+                    Log.Error(Resource_Infrastructure_Repository.NotSuportedError
+                        + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.StackTrace);
+
+                    dbTransaction.Rollback();
+
+                    throw new VuelingException(Resource_Infrastructure_Repository.NotSuportedError, e);
+
+                } catch (ObjectDisposedException e) {
+                    Log.Error(Resource_Infrastructure_Repository.ObjectDisposedError
+                        + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.StackTrace);
+
+                    dbTransaction.Rollback();
+
+                    throw new VuelingException(Resource_Infrastructure_Repository.ObjectDisposedError, e);
+
+                } catch (InvalidOperationException e) {
+                    Log.Error(Resource_Infrastructure_Repository.InvalidOperationError
+                        + e.Message + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.Data + Resource_Infrastructure_Repository.ErrorLogSeparation
+                        + e.StackTrace);
+
+                    dbTransaction.Rollback();
+
+                    throw new VuelingException(Resource_Infrastructure_Repository.InvalidOperationError, e);
+                    #endregion
                 }
             }
+            
+        }
+            
+
+        public void DeleteAllRowsOfClientTable(VuelingEntities db) {
+            db.Database.ExecuteSqlCommand(Resource_Infrastructure_Repository.QueryToDeleteAllRowsInClientTable);
         }
 
-        public void DeleteAllRowsOfPolicyTable() {
-            using (var db = new VuelingEntities()) {
-                using (var dbTransaction = db.Database.BeginTransaction()) {
-                    try{
-                        db.Database.ExecuteSqlCommand(Resource_Infrastructure_Repository.QueryToDeleteAllRowsInPolicyTable);
-
-                        db.SaveChanges();
-                        dbTransaction.Commit();
-                    } catch (Exception e) {
-                        dbTransaction.Rollback();
-
-                        throw new VuelingException(Resource_Infrastructure_Repository.CantDeleteMsg, e);
-                    }
-                }
-            }
+        public void DeleteAllRowsOfPolicyTable(VuelingEntities db) {
+            db.Database.ExecuteSqlCommand(Resource_Infrastructure_Repository.QueryToDeleteAllRowsInPolicyTable);
         }
     }
 }

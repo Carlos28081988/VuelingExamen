@@ -19,6 +19,9 @@ namespace Vueling.Facade.Api.Controllers{
 
         private readonly ClientService clientService;
 
+        /// <summary>
+        /// Void Constructor
+        /// </summary>
         public ClientApiController() : this(new ClientService()) {
             #region Init Log
             Log.Logger = new LoggerConfiguration()
@@ -28,6 +31,10 @@ namespace Vueling.Facade.Api.Controllers{
             #endregion
         }
 
+        /// <summary>
+        /// Void constructor
+        /// </summary>
+        /// <param name="clientService"></param>
         public ClientApiController(ClientService clientService) {
             this.clientService = clientService;
             #region Init Log
@@ -38,6 +45,10 @@ namespace Vueling.Facade.Api.Controllers{
             #endregion
         }
 
+        /// <summary>
+        /// Get all clients
+        /// </summary>
+        /// <returns>List</returns>
         [HttpGet]
         [Authorize(Users = "admin, user")]
         // GET: api/ClientApi
@@ -45,11 +56,19 @@ namespace Vueling.Facade.Api.Controllers{
             return clientService.Get();
         }
 
+        /// <summary>
+        /// Get client by his id
+        /// </summary>
+        /// <param name="idClient"></param>
+        /// <returns></returns>
         // GET: api/ClientApi/5
+        [Route("ClientApi/{id}")]
+        [HttpGet]
         public ClientDto Get(string idClient) {
             return clientService.GetById(idClient);
         }
 
+        ///
         [Route("ClientApi/name/{name}")]
         [HttpGet]
         public ClientDto GetUserByName(string name) {
@@ -63,6 +82,11 @@ namespace Vueling.Facade.Api.Controllers{
             return clientService.GetUserByPolicyId(idPolicy);
         }
 
+        /// <summary>
+        /// Add a client
+        /// </summary>
+        /// <param name="clientDto"></param>
+        /// <returns></returns>
         // POST: api/ClientApi
         [ResponseType(typeof(ClientDto))]
         public IHttpActionResult Post(ClientDto clientDto) {
@@ -89,7 +113,6 @@ namespace Vueling.Facade.Api.Controllers{
                 throw new HttpResponseException(response);
                 #endregion
             }
-
             return CreatedAtRoute(ResourceApi.HttpRoute,
                 new { id = clientDtoAdded.Id }, clientDtoAdded);
         }
